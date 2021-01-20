@@ -126,6 +126,8 @@ def walk_tree_2(root, pre_type):
                     yield _token
             else:
                 root._token.stmt_type = curType
+                if hasattr(root,'modifiers'):
+                    root._token.value = "_".join(list(root.modifiers) + [root._token.value])
                 yield root._token
         else:
             pass
@@ -147,7 +149,6 @@ def get_token_stream(root):
     tokens = set()
     for x in walk_tree_2(root, None):
         x = (x.value, (x.position[0],x.position[1]),x.stmt_type,type(x).__name__)
-        # print(x)
         tokens.add(x)
     return sorted(tokens,key=lambda x:x[1])
 

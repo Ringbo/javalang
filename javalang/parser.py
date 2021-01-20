@@ -362,6 +362,7 @@ class Parser(object):
             self.illegal("Expected type declaration")
 
         type_declaration._position = token.position
+        token.modifier = modifiers
         type_declaration._token = token
         type_declaration.modifiers = modifiers
         type_declaration.annotations = annotations
@@ -830,6 +831,7 @@ class Parser(object):
             member = self.parse_method_or_field_declaraction()
 
         member._position = token.position
+        token.modifier = modifiers
         member._token = token
         member.modifiers = modifiers
         member.annotations = annotations
@@ -1163,6 +1165,7 @@ class Parser(object):
                                              varargs=varargs)
 
             parameter._position = token.position
+            token.modifier = modifiers
             parameter._token = token
             formal_parameters.append(parameter)
 
