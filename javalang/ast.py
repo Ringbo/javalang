@@ -126,7 +126,7 @@ def walk_tree_2(root, pre_type):
                     yield _token
             else:
                 root._token.stmt_type = curType
-                if hasattr(root,'modifiers'):
+                if hasattr(root,'modifiers') and root.modifiers:
                     root._token.value = "_".join(list(root.modifiers) + [root._token.value])
                 yield root._token
         else:
