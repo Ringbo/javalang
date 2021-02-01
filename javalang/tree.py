@@ -4,7 +4,7 @@ from .ast import Node
 # ------------------------------------------------------------------------------
 
 class CompilationUnit(Node):
-    attrs = ("package", "imports", "types")
+    attrs = ("package", "imports", "types", "tokens")
 
 class Import(Node):
     attrs = ("path", "static", "wildcard")

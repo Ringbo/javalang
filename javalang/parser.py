@@ -306,7 +306,8 @@ class Parser(object):
 
         return tree.CompilationUnit(package=package,
                                     imports=import_declarations,
-                                    types=type_declarations)
+                                    types=type_declarations,
+                                    tokens=self.tokens)
 
     @parse_debug
     def parse_import_declaration(self):
@@ -1662,7 +1663,10 @@ class Parser(object):
         statement_groups = list()
 
         while self.tokens.look().value in ('case', 'default'):
+            token = self.tokens.look()
             statement_group = self.parse_switch_block_statement_group()
+            statement_group._token = token
+            statement_group._position = token.position
             statement_groups.append(statement_group)
 
         return statement_groups
@@ -2029,10 +2033,10 @@ class Parser(object):
 
         elif isinstance(token, Identifier):
             qualified_identifier = [self.parse_identifier()]
-            token2 = None
+            token2 = []
             while self.would_accept('.', Identifier):
                 self.accept('.')
-                token2 = self.tokens.look()
+                token2.append(self.tokens.look())
                 identifier = self.parse_identifier()
                 qualified_identifier.append(identifier)
 
@@ -2044,7 +2048,10 @@ class Parser(object):
             elif isinstance(identifier_suffix, tree.ClassReference):
                 identifier_suffix.type = tree.ReferenceType(name=qualified_identifier.pop())
             identifier_suffix._position = token.position
-            identifier_suffix._token = [token, token2] if token2 is not None else token
+            if token2:
+                identifier_suffix._token = [token] + token2
+            else:
+                identifier_suffix._token = [token]
             # identifier_suffix._token = token
             # identifier_suffix._position = invocated_name.position
             # identifier_suffix._token = invocated_name

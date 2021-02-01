@@ -16,6 +16,7 @@ typePriority = {
     'DoStatement': 1,
     'ForStatement': 1,
     'FieldDeclaration': 1,
+    'SynchronizedStatement':1
 }
 
 
@@ -39,11 +40,11 @@ class Node(object):
 
     def __init__(self, **kwargs):
         values = kwargs.copy()
-
+        self.tokens = set()
         for attr_name in self.attrs:
             value = values.pop(attr_name, None)
             setattr(self, attr_name, value)
-        self.tokens = set()
+
         if values:
             raise ValueError('Extraneous arguments')
 
@@ -144,6 +145,31 @@ def walk_tree_2(root, pre_type):
             for node in walk_tree_2(child, curType):
                     yield node
 
+def walk_tree_3(root, pre_type):
+    children = None
+    if isinstance(root, Node):
+        if type(root).__name__ in typePriority:
+            curType = type(root).__name__
+        else:
+            curType = pre_type
+        if hasattr(root,'position'):
+            if hasattr(root,'curType') and root.curType is not None:
+                print("")
+            root.curType = curType
+            yield root
+            # print("",end='')
+        children = root.children
+    else:
+        children = root
+    for child in children:
+        if isinstance(child, (Node, list, tuple)):
+            if type(child).__name__ in typePriority:
+                curType = type(child).__name__
+            else:
+                curType = pre_type
+            for node in walk_tree_3(child, curType):
+                if hasattr(node, 'position'):
+                    yield node
 
 def get_token_stream(root):
     tokens = set()
@@ -151,6 +177,37 @@ def get_token_stream(root):
         x = (x.value, (x.position[0],x.position[1]),x.stmt_type,type(x).__name__)
         tokens.add(x)
     return sorted(tokens,key=lambda x:x[1])
+
+def get_token_stream_2(root):
+    positions = set()
+    for x in walk_tree_3(root, None):
+        positions.add(x)
+    positions = list(positions)
+    positions = sorted([((x.position[0],x.position[1]), x.curType) for x in positions if x.position and x.curType])
+    if positions.__len__() == 0:
+        return positions
+    start_line, end_line = positions[0][0][0], positions[-1][0][0]
+    mapping = {}
+    for x in positions:
+        mapping[x[0][0]] = x[1]
+    tokens = []
+    for token in root.tokens.list:
+        if token.position[0] < start_line:
+            continue
+        elif token.position[0] > end_line:
+            break
+        elif type(token).__name__ != "Separator":
+            if token.position[0] not in mapping:
+                if token.value == 'finally' and type(token).__name__ == 'Keyword':
+                    token.curType = 'TryStatement'
+                elif token.value in {'if', 'else'} and type(token).__name__ == 'Keyword':
+                    token.curType = 'IfStatement'
+                else:
+                    token.curType = '<UNK>'
+            else:
+                token.curType = mapping[token.position[0]]
+            tokens.append(token)
+    return tokens
 
 
 def dump(ast, file):
