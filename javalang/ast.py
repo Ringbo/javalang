@@ -153,8 +153,8 @@ def walk_tree_3(root, pre_type):
         else:
             curType = pre_type
         if hasattr(root,'position'):
-            if hasattr(root,'curType') and root.curType is not None:
-                print("")
+            # if hasattr(root,'curType') and root.curType is not None:
+            #     print("")
             root.curType = curType
             yield root
             # print("",end='')
