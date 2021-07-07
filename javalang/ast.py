@@ -145,11 +145,14 @@ def walk_tree_2(root, pre_type):
             for node in walk_tree_2(child, curType):
                     yield node
 
-def walk_tree_3(root, pre_type):
+def walk_tree_3(root, pre_type,curTypePriority=None):
+    if curTypePriority is None:
+        curTypePriority = typePriority
     children = None
     if isinstance(root, Node):
-        if type(root).__name__ in typePriority:
+        if type(root).__name__ in curTypePriority:
             curType = type(root).__name__
+            pre_type = curType
         else:
             curType = pre_type
         if hasattr(root,'position'):
@@ -163,11 +166,31 @@ def walk_tree_3(root, pre_type):
         children = root
     for child in children:
         if isinstance(child, (Node, list, tuple)):
-            if type(child).__name__ in typePriority:
+            if type(child).__name__ in curTypePriority:
                 curType = type(child).__name__
             else:
                 curType = pre_type
-            for node in walk_tree_3(child, curType):
+            for node in walk_tree_3(child, curType, curTypePriority):
+                if hasattr(node, 'position'):
+                    yield node
+
+def walk_tree_all_nodes(root, pre_type):
+    children = None
+    if isinstance(root, Node):
+        curType = type(root).__name__
+        if hasattr(root,'position'):
+            # if hasattr(root,'curType') and root.curType is not None:
+            #     print("")
+            root.curType = curType
+            yield root
+            # print("",end='')
+        children = root.children
+    else:
+        children = root
+    for child in children:
+        if isinstance(child, (Node, list, tuple)):
+            curType = type(child).__name__
+            for node in walk_tree_all_nodes(child, curType):
                 if hasattr(node, 'position'):
                     yield node
 
@@ -178,9 +201,9 @@ def get_token_stream(root):
         tokens.add(x)
     return sorted(tokens,key=lambda x:x[1])
 
-def get_token_stream_2(root):
+def get_token_stream_2(root, typePriority=None, separator=False):
     positions = set()
-    for x in walk_tree_3(root, None):
+    for x in walk_tree_3(root, None, typePriority):
         positions.add(x)
     positions = list(positions)
     positions = sorted([((x.position[0],x.position[1]), x.curType) for x in positions if x.position and x.curType])
@@ -196,7 +219,7 @@ def get_token_stream_2(root):
             continue
         elif token.position[0] > end_line:
             break
-        elif type(token).__name__ != "Separator":
+        elif (type(token).__name__ != "Separator" and separator is False) or separator is True:
             if token.position[0] not in mapping:
                 if token.value == 'finally' and type(token).__name__ == 'Keyword':
                     token.curType = 'TryStatement'
